@@ -6,7 +6,7 @@ Currently, Commander Mode only supports Pokemon FireRed (both revisions) and Pok
 
 ## Using Commander Mode
 
-Commander Mode is written for the BizHawk emulator. It could likely be adapted to work in other emulators, but BizHawk is the only one TPP tests in and uses for GBA.
+Commander Mode is written for the [BizHawk](http://tasvideos.org/Bizhawk.html) emulator. It could likely be adapted to work in other emulators, but BizHawk is the only one TPP tests in and uses for GBA.
 
 To use Commander Mode in BizHawk, open the Lua Console from the Tools menu and open `Commander.lua` from the `Commander` folder. If you want to move the scripts elsewhere, make sure all scripts in the `Commander` folder are kept together.
 
