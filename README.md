@@ -16,6 +16,8 @@ If you wish to operate Commander Mode using your own script, Commander Mode retu
 
 Commands are not case-sensitive. `MOVE1`, `Move1`, and `move1` all work.
 
+Commander Mode's scripts are stateless and can be reloaded at any time if necessary. `Commander.lua` needs to be reloaded when switching games, and should automatically reload itself when the emulator loads a saved state.
+
 ## Command Reference
 
 ### MOVE
@@ -60,7 +62,21 @@ The `RUN` command takes all necessary steps to run from a Wild battle. It will n
 
 Inside the Safari Zone, `CATCH` will correctly throw a Safari Ball. The other commands still attempt operate as they would in a normal battle. `MOVE` will select the Ball option and throw a Safari Ball. `ITEM` will throw Bait or open the PokeBlock case. `SWITCH` will throw a Rock or select Go Near, and `RUN` will select Run.
 
+## Nicknaming
+
+Commander Mode will select 'Yes' in response to receiving a command while the game is asking whether to nickname a Pokemon. This behavior can be disabled by setting `forceNicknames` to `false` at the top of `Commander.lua` and reload the script. When this is disabled, Commander Mode will not respond to commands while at this prompt.
+
+Additionally, Commander Mode will move the cursor randomly in response to receiving a command while the nicknaming screen is open. This behavior can be disabled by setting `randomizeNicknames` to `false` at the top of `Commander.lua` and reload the script. When this is disabled, Commander Mode will not respond to commands while on this screen.
+
 # Contributing
+
+## Bug Reports
+
+If any bad behaviors are found while using Commander Mode with Pokemon FireRed, Pokemon Emerald, or any binary hack thereof, please create an Issue.
+
+Commander Mode has a verbose output mode where it describes how it decides which button to press. This is invaluable for debugging issues. To enable this, set `debug` to `true` at the top of `Commander.lua` and reload the script.
+
+## Adding Support for Other Games
 
 Commander Mode should theoretically be able to operate any of GameFreak's GBA Pokemon games and their binary hacks. Adding support for the rest of the versions involves creating a table of addresses for Commander's state lookup functions and adding a way to detect that game version in the `Init` function. LeafGreen should be automatically supported by FireRed's code once an address table can be created. Ruby and Sapphire may require additional work. Hacks that recompile part or all of the game will likely need their own address tables. Issues that are submitted against romhacks are not likely to get worked on, but pull requests adding support for specific hacks are welcome.
 
