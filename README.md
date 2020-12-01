@@ -16,8 +16,6 @@ If you wish to operate Commander Mode using your own script, Commander Mode retu
 
 Commands are not case-sensitive. `MOVE1`, `Move1`, and `move1` all work.
 
-Currently, an external script must call the exported `DigestItems` function with a table of the items in the player's Bag for the `ITEM` command to work properly. If this is not possible, see [Alternative ITEM Commands](#alternative-item-commands).
-
 ## Command Reference
 
 ### MOVE
@@ -30,15 +28,25 @@ The `SWITCH` command is followed by a number 1-6 that denotes which party slot y
 
 ### ITEM
 
-The `ITEM` command is followed by a 1-3 digit number that denotes the [index number](https://bulbapedia.bulbagarden.net/wiki/List_of_items_by_index_number_(Generation_III)) (in decimal) of the desired item to be used. If the item is available, it will take all necessary steps to navigate to the Bag menu, move to the correct pocket, move the cursor to the desired item, and use it. `ITEM` will only use items from the Items, Berries, and Balls pockets. It will not attempt use items from the Balls pocket in Trainer battles. If the item is to be used on a Pokemon in the party, see `ON` below.
+The `ITEM` command is followed by a 1-3 digit number that denotes the [index number](https://bulbapedia.bulbagarden.net/wiki/List_of_items_by_index_number_(Generation_III)) (in decimal) of the desired item to be used. If the item is available, it will take all necessary steps to navigate to the Bag menu, move to the correct pocket, move the cursor to the desired item, and use it. `ITEM` will only use items from the Items, Berries, and Balls pockets. It will not attempt use items from the Balls pocket in Trainer battles. If the item is to be used on a Pokemon in the party, see `WITH` below.
 
-### ON
+If using item index numbers is cumbersome, see [Alternative ITEM Commands](#alternative-item-commands).
 
-The `ON` command is a bag-safe version of `SWITCH`. As with `SWITCH`, it is followed by a number 1-6 that denoted which party slot you want to use an item on. It will operate the Pokemon menu when it is open, but it will not attempt to open the menu if you're not already in it.
+### WITH
+
+The `WITH` command is a bag-safe version of `SWITCH`. As with `SWITCH`, it is followed by a number 1-6 that denoted which party slot you want to use an item on. It will operate the Pokemon menu when it is open, but it will not attempt to open the menu if you're not already in it.
+
+### CATCH
+
+The `CATCH` command will attempt to use whichever ball is currently selected in the Balls pocket. If the cursor is on Close, it will move the cursor up to select the last ball in the bag. `CATCH` will do nothing if there are no available balls to throw, or if not in a Wild battle. 
 
 ### RUN
 
 The `RUN` command takes all necessary steps to run from a Wild battle. It will not attempt to run from Trainer battles.
+
+## Safari Zone
+
+Inside the Safari Zone, the commands still attempt operate as they would in a normal battle. `MOVE` will select the Ball option and throws a Safari Ball. `ITEM` and `CATCH` will open the PokeBlock case. `SWITCH` will select Go Near, and `RUN` will select Run.
 
 ## Alternative ITEM Commands
 
@@ -84,8 +92,8 @@ commands = {
     -- ["REUSE"] = function () return MoveToBag(pmLastUsedBagPocket, pmLastUsedBagSlot) end,
     ["ON"] = function (item) return MoveToParty(item, InUseItemOnPartyMenu()) end,
     ["WITH"] = function (item) return MoveToParty(item, InUseItemOnPartyMenu()) end,
-    ["CATCH"] = function () return MoveToBag(pmBagIndex['balls'], GetBagCursor() + 1) end,
+    ["CATCH"] = Catch,
     ["RUN"] = MoveToRun
 }
 ```
-To switch to the alternative ITEM commands, comment out or remove `["ITEM"] = MoveToItem,`, and then uncomment the next 6 lines.
+To switch to the alternative ITEM commands, comment out or remove both `["ITEM"] = MoveToItem,` and `["CATCH"] = Catch,`, and then uncomment the 6 lines after `["ITEM"] = MoveToItem,`.

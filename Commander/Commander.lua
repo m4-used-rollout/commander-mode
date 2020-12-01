@@ -1,9 +1,11 @@
 -- TPP Military Mode ][ command script
+-- For Emerald and Emerald-based binary hacks
 -- Commands: 
 --  MOVE    - Selects moves 1-4
 --  SWITCH  - Selects pokemon 1-6
 --  ITEM    - Selects item by id (if present in bag and applicable to battle)
---  ON      - Selects pokemon 1-6 from use item menu
+--  WITH    - Selects pokemon 1-6 from use item menu
+--  CATCH   - Throws the currently selected ball
 --  RUN     - Runs from battle
 
 
@@ -47,18 +49,28 @@
 -- 0x03CE72 key items scroll position 0-based
 -- 0x3CED1 party menu cursor 0-5, 7 (7 is cancel)
 
+-- IWRAM Address notes
+-- 0x5D8C pointer to Save Block 1 (in EWRAM)
+-- 0x5D90 pointer to Save Block 2 (in EWRAM)
+
+sBlock1Ptr = 0x03005D8C
+sBlock2Ptr = 0x03005D90
+musicAddr  = 0x03000F48
+inBattle = 0x030026F9
+
 pmAddresses = {
     ["CursorContest"] = 0x002E30,
     ["CursorMoveLearnOverworld"] = 0x0040D6,
     ["FirstMonTargetScreen"] = 0x005664,
     ["SecondMonTargetScreen"] = 0x00567C,
-    ["CursorMoveLearnBattle"] = 0x01299A,
+    --["CursorMoveLearnBattle"] = 0x01299A,
     ["UseItemPartyMenu"] = 0x02000E,
     ["SubmenuItem"] = 0x020056,
     ["SubmenuParty"] = 0x020071,
     ["PokemonSummaryScreen"] = 0x0200EF,
     ["DialogText"] = 0x021FC4,
     ["BattleText"] = 0x022E2C,
+    ["BattleFlags"] = 0x022FEC,
     ["BattleFlags"] = 0x022FEC,
     ["MenuId"] = 0x023064,
     ["DoubleBattleMenuId"] = 0x023464,
@@ -92,6 +104,9 @@ function Escape() return { ["B"] = true } end
 function NoInput() return {} end
 
 function Active()
+    if EvolutionIsHappening() then
+        return false
+    end
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'EWRAM')
     return (bit.band(battleFlags, 4) == 4
         --and bit.band(battleFlags, 0x80) == 0 -- turn off in Safari Zone
@@ -100,8 +115,7 @@ function Active()
 end
 
 function InBattle()
-    local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'EWRAM')
-    return bit.band(battleFlags, 4) == 4
+    return bit.band(memory.readbyte(inBattle, 'System Bus'), 2) > 0;
 end
 
 function InTrainerBattle()
@@ -147,6 +161,7 @@ function InPokemonSummary() return memory.readbyte(pmAddresses["PokemonSummarySc
 function InTargetingScreen() return InDoubleBattle() and (memory.readbyte(pmAddresses["FirstMonTargetScreen"]) == 4 or memory.readbyte(pmAddresses["SecondMonTargetScreen"]) == 4) end
 function AtSwitchChangePokemonPrompt() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'EWRAM'), "Will .+ change\nPokémon?") end
 function TriedToSwitchToActivePokemon() return string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'EWRAM'), ".+ is already\nin battle!") end
+function EvolutionIsHappening() return memory.read_u16_le(musicAddr, 'System Bus')  == 0x179 end
 
 function AboutToLearnMove()
     return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'EWRAM'), "Delete a move to make\nroom for .+?")
@@ -157,7 +172,7 @@ function AboutToCancelMove()
         or string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'EWRAM'), "Stop trying to teach\n.+?")
 end
 function ContestAppealSelect() return string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'EWRAM'), "Which move will be played?") end
-function ForcedMonSwitch() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'EWRAM'), "Use next Pokémon?") end
+function ForcedMonSwitch() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'EWRAM'):lower(), ("Use next POKéMON?"):lower()) end
 
 function GetBattleCursor() 
     if InDoubleBattleMenu() then
@@ -172,9 +187,9 @@ function GetFightCursor()
     return memory.readbyte(pmAddresses["CursorFight"], 'EWRAM')
 end
 function GetMoveLearnCursor()
-    if InBattle() then
-        return memory.readbyte(pmAddresses["CursorMoveLearnBattle"], 'EWRAM')
-    end
+    -- if InBattle() then
+    --     return memory.readbyte(pmAddresses["CursorMoveLearnBattle"], 'EWRAM')
+    -- end
     return memory.readbyte(pmAddresses["CursorMoveLearnOverworld"], 'EWRAM')
 end
 function GetYesNoCursor() return memory.readbyte(pmAddresses["CursorYesNo"], 'EWRAM') end
@@ -197,10 +212,10 @@ function MoveRectMenu(start, dest)
     if start == dest then
         return Confirm()
     elseif start == 0 then
-        if dest == 2 then
-            return MoveDown()
+        if dest == 1 then -- avoid dest 1 otherwise (Bag)
+            return MoveRight()
         end
-        return MoveRight()
+        return MoveDown()
     elseif start == 1 then
         if dest == 3 then
             return MoveDown()
@@ -260,6 +275,37 @@ function MoveToFight(move)
     end
     return Escape()
 end
+
+itemCache = nil
+pocketCache = nil
+function DigestItems(items)
+    itemCache = {}
+    pocketCache = {}
+    for p,parr in pairs(items) do
+        local pocket = pmBagIndex[p]
+        if pocket ~= nil then
+            pocketCache[pocket] = {}
+            for slot,i in ipairs(parr) do
+                itemCache[i['id']] = { ['pocket'] = pocket, ['slot'] =  slot }
+                pocketCache[pocket][slot] = i
+            end
+        end
+    end
+end
+
+function UpdateItems()
+    local sBlock1Addr = Utils.switchDomainAndGetLocalPointer(memory.read_u32_le(Utils.switchDomainAndGetLocalPointer(sBlock1Ptr)))
+    local sBlock2Addr = Utils.switchDomainAndGetLocalPointer(memory.read_u32_le(Utils.switchDomainAndGetLocalPointer(sBlock2Ptr)))
+    local securityKey = memory.read_u32_le(sBlock2Addr + 0xAC)
+	local halfKey = securityKey % 0x10000
+    local items = {
+        ["items"] = Utils.getItemCollection(sBlock1Addr + 0x560, 30, halfKey),
+        ["balls"] = Utils.getItemCollection(sBlock1Addr + 0x650, 16, halfKey),
+        ["berries"] = Utils.getItemCollection(sBlock1Addr + 0x790, 46, halfKey)
+    }
+    DigestItems(items)
+end
+
 function MoveToBag(pocket, item)
     if ForcedMonSwitch() then
         if InPartyMenu() then
@@ -286,6 +332,7 @@ function MoveToBag(pocket, item)
                     end
                     pmLastUsedBagPocket = pocket
                     pmLastUsedBagSlot = item
+                    itemCache = nil --used item, rebuild item cache next time
                     return Confirm()
                 elseif InUseItemOnPartyMenu() then
                     return NoInput()
@@ -359,20 +406,10 @@ function MoveToRun()
     return Escape()
 end
 
-itemCache = {}
-function DigestItems(items)
-    itemCache = {}
-    for p,parr in pairs(items) do
-        local pocket = pmBagIndex[p]
-        if pocket ~= nil then
-            for slot,i in ipairs(parr) do
-                itemCache[i['id']] = { ['pocket'] = pocket, ['slot'] =  slot }
-            end
-        end
-    end
-end
-
 function MoveToItem(id)
+    if itemCache == nil then
+        UpdateItems()
+    end
     local location = itemCache[id]
     if location ~= nil then
         return MoveToBag(location['pocket'], location['slot'])
@@ -384,8 +421,30 @@ function RunCommand(cmd, num)
     cmd = string.upper(cmd)
     if Active() and commands[cmd] ~= nil then
         return commands[cmd](num)
+    else
+        itemCache = nil
     end
     return NoInput()
+end
+
+function Catch()
+    if InTrainerBattle() then
+        return NoInput()
+    end
+    local bagCount = 1 + GetBagCursor()
+    if itemCache == nil then
+        UpdateItems()
+    end
+    if pocketCache ~= nil then
+        bagCount = 0
+        for i,v in ipairs(pocketCache[pmBagIndex['balls']]) do
+            bagCount = i
+        end
+        if bagCount == 0 then
+            return NoInput()
+        end
+    end
+    return MoveToBag(pmBagIndex['balls'], math.min(GetBagCursor() + 1, bagCount))
 end
 
 function Parse(cmd)
@@ -413,7 +472,7 @@ commands = {
     -- ["REUSE"] = function () return MoveToBag(pmLastUsedBagPocket, pmLastUsedBagSlot) end,
     ["ON"] = function (item) return MoveToParty(item, InUseItemOnPartyMenu()) end,
     ["WITH"] = function (item) return MoveToParty(item, InUseItemOnPartyMenu()) end,
-    ["CATCH"] = function () return MoveToBag(pmBagIndex['balls'], GetBagCursor() + 1) end,
+    ["CATCH"] = Catch,
     ["RUN"] = MoveToRun
 }
 
