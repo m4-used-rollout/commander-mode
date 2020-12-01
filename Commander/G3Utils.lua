@@ -99,7 +99,7 @@ end
 -- example: translateRSEChars(string.char(199, 0, 174, 174, 174, 186, 180, 186, 180, 165, 187, 255))
 -- Pokémon's name is "M ---/’/’4"
 -- BizHawk's console prints "M ---/â€™/â€™4"
--- BizHawk's console doesn't understand UTF-8, but the HUD does, so it comes out ok.
+-- BizHawk's console doesn't understand UTF-8, but the script does
 RSECharmap = (loadfile "G3Lookups.lua")().CharMap
 function translateRSEChars(rawStr)
 	local outStr = ""

@@ -1,4 +1,4 @@
-local Types = { --unfortunately not listed in ROM anywhere, they use icons
+local Types = { 
 	[0] = "Normal",
 	[1] = "Fighting",
 	[2] = "Flying",
@@ -8,7 +8,7 @@ local Types = { --unfortunately not listed in ROM anywhere, they use icons
 	[6] = "Bug",
 	[7] = "Ghost",
 	[8] = "Steel",
-	[9] = "Fairy", --???
+	[9] = "???", -- Some hacks rename this to Fairy
 	[10] = "Fire",
 	[11] = "Water",
 	[12] = "Grass",
@@ -19,7 +19,7 @@ local Types = { --unfortunately not listed in ROM anywhere, they use icons
 	[17] = "Dark"
 }
 
-local EggTypes = { --didn't check and see if this is listed in ROM yet
+local EggTypes = { 
 	[0] = "",
 	[1] = "Monster",
 	[2] = "Water 1",
