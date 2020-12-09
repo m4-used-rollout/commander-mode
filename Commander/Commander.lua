@@ -50,7 +50,9 @@ pmAddressesEm = {
     ["MenuId"] = 0x2023064, -- gBattleBufferA[0][0] (see sPlayerBufferCommands for values)
     ["DoubleBattleMenuId"] = 0x2023464, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
     ["YesNoWindowId"] = 0x203cd9f, -- sYesNoWindowId
-    ["CursorYesNo"] = 0x2024333, -- gBattleCommunication[CURSOR_POSITION] - is general use and clashes with tasks
+    ["BattleMoveLearnState"] = 0x2023e82 + 0x1f, -- gBattleScripting.learnMoveState
+    ["BattleCommunicationState"] = 0x2024332, -- gBattleCommunication[MULTIUSE_STATE]
+    ["CursorYesNo"] = 0x2024332 + 1, -- gBattleCommunication[CURSOR_POSITION]
     ["CursorBattle"] = 0x20244AC, -- gActionSelectionCursor[0]
     ["CursorDoubleBattle"] = 0x20244AE, -- gActionSelectionCursor[2]
     ["CursorFight"] = 0x20244B0, -- gMoveSelectionCursor[0]
@@ -88,7 +90,9 @@ pmAddressesFr = {
     ["MenuId"] = 0x2022BC4, -- gBattleBufferA[0][0] (see sPlayerBufferCommands for values)
     ["DoubleBattleMenuId"] = 0x2022FC4, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
     ["YesNoWindowId"] = 0x203adf3, -- sYesNoWindowId
-    ["CursorYesNo"] = 0x2023E83, -- gBattleCommunication[CURSOR_POSITION] - is general use and clashes with tasks
+    ["BattleMoveLearnState"] = 0x2023fc4 + 0x1f, -- gBattleScripting.learnMoveState
+    ["BattleCommunicationState"] = 0x2023e82, -- gBattleCommunication[MULTIUSE_STATE]
+    ["CursorYesNo"] = 0x2023E82 + 1, -- gBattleCommunication[CURSOR_POSITION]
     ["CursorBattle"] = 0x2023FF8, -- gActionSelectionCursor[0]
     ["CursorDoubleBattle"] = 0x2023FFA, -- gActionSelectionCursor[2]
     ["CursorFight"] = 0x2023FFC, -- gMoveSelectionCursor[0]
@@ -282,7 +286,15 @@ function InBagSubmenu()
  end
 function InPartySubmenu() return InPartyMenu() and memory.readbyte(Ptr(pmAddresses["PartyMenu"] - 4, 12), 'System Bus') ~= 0xFF end -- sPartyMenuInternal->windowId[0]
 function InUseItemOnPartyMenu() return InPartyMenu() and memory.readbyte(pmAddresses["PartyMenu"] + 11, 'System Bus') == 3 end -- PartyMenu.action == PARTY_ACTION_USE_ITEM
-function InYesNoMenu() return DoesWindowExist(memory.readbyte(pmAddresses["YesNoWindowId"], 'System Bus')) end
+function InYesNoMenu()
+    if InBattle() then
+        if NicknamingPokemon() then
+            return memory.readbyte(pmAddresses["BattleCommunicationState"], 'System Bus') == 1
+        end
+        return memory.readbyte(pmAddresses["BattleMoveLearnState"], 'System Bus') == 1
+    end
+    return DoesWindowExist(memory.readbyte(pmAddresses["YesNoWindowId"], 'System Bus'))
+end
 function InPokemonSummary() 
     local mainCallback = Ptr(Ptr(pmAddresses["PokemonSummaryScreen"], pmAddresses['PokemonSummaryScreenCallbackOffset'])) - 1
     return mainCallback == pmAddresses['SummaryReturnToParty'] or mainCallback == pmAddresses['SummaryReturnToBattle'] or mainCallback == pmAddresses['SummaryReturnToTMLearn']
