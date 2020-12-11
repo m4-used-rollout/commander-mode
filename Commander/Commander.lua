@@ -35,6 +35,7 @@ pmAddressesEm = {
     ["Windows"] = 0x2020004, -- gWindows
     ["TargetingCursor"] = 0x3005d74, -- gMultiUsePlayerCursor
     ["TargetingControllerFunction"] = 0x8057824, -- HandleInputChooseTarget
+    ["MoveSwitchingControllerFunction"] = 0x8058138, -- HandleMoveSwitching
     ["FirstMonBattleController"] = 0x3005d60, -- gBattlerControllerFuncs[0]
     ["SecondMonBattleController"] = 0x3005d60 + 8, -- gBattlerControllerFuncs[2]
     ["NicknameScreen"] = 0x2039f94, -- sNamingScreen
@@ -113,6 +114,7 @@ pmAddressesFr = {
     ["InBattle"] = 0x30030f0 + 0x439, --0x030026F9 -- gMain.inBattle
     ["TargetingCursor"] = 0x3004ff4, -- gMultiUsePlayerCursor
     ["TargetingControllerFunction"] = 0x802e674, -- HandleInputChooseTarget (Rev 0)
+    ["MoveSwitchingControllerFunction"] = 0x802ef58, -- HandleMoveSwitching (Rev 0)
     ["FirstMonBattleController"] = 0x3004fe0, -- gBattlerControllerFuncs[0]
     ["SecondMonBattleController"] = 0x3004fe0 + 8, -- gBattlerControllerFuncs[2]
     ["CursorSubmenu"] = 0x20399c2, -- sMenu.cursorPos,
@@ -131,7 +133,9 @@ pmAddressesFrRev1 = {
     ["SummaryReturnToBattle"] = 0x8077778, -- ReshowBattleScreenAfterMenu (Rev 1)
     ["SummaryReturnToParty"] = 0x8122e34, -- CB2_ReturnToPartyMenuFromSummaryScreen (Rev 1)
     ["SummaryReturnToTMLearn"] = 0x8125efc, -- CB2_ReturnToPartyMenuWhileLearningMove (Rev 1)
-    ["TargetingControllerFunction"] = 0x802e688 -- HandleInputChooseTarget (Rev 1)
+    ["TargetingControllerFunction"] = 0x802e688, -- HandleInputChooseTarget (Rev 1)
+    ["MoveSwitchingControllerFunction"] = 0x802ef6c -- HandleMoveSwitching (Rev 1)
+
 }
 
 -- Initialization
@@ -299,6 +303,7 @@ function InPokemonSummary()
     local mainCallback = Ptr(Ptr(pmAddresses["PokemonSummaryScreen"], pmAddresses['PokemonSummaryScreenCallbackOffset'])) - 1
     return mainCallback == pmAddresses['SummaryReturnToParty'] or mainCallback == pmAddresses['SummaryReturnToBattle'] or mainCallback == pmAddresses['SummaryReturnToTMLearn']
 end
+function TryingToSwitchMoves() return (memory.read_u32_le(pmAddresses["FirstMonBattleController"]) == pmAddresses["MoveSwitchingControllerFunction"] + 1 or (InDoubleBattle() and memory.read_u32_le(pmAddresses["SecondMonBattleController"]) == pmAddresses["MoveSwitchingControllerFunction"] + 1)) end
 function InTargetingScreen() return InDoubleBattle() and (memory.read_u32_le(pmAddresses["FirstMonBattleController"]) == pmAddresses["TargetingControllerFunction"] + 1 or memory.read_u32_le(pmAddresses["SecondMonBattleController"]) == pmAddresses["TargetingControllerFunction"] + 1) end
 function AtSwitchChangePokemonPrompt() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'System Bus'), "Will .+ change\nPokémon?") end
 function TriedToSwitchToActivePokemon() return string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'System Bus'), ".+ is already\nin battle!") end
@@ -417,6 +422,10 @@ function MoveToFight(move)
             return NoInput() -- wait for choice
         end
     elseif InFightMenu() then
+        if TryingToSwitchMoves() then
+            log("Cancelling move swap")
+            return Escape()
+        end
         log("In fight menu, selecting move " .. move)
         return MoveRectMenu(GetFightCursor(), move - 1)
     elseif InBattleMenu() then
