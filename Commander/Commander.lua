@@ -15,7 +15,7 @@
 
 local forceNicknames = true -- Commander Mode will select Yes in response to any command if the Nicknaming prompt is open
 local randomizeNicknames = true -- Commander Mode will randomly move the cursor in response to any command if the Nickname screen is open
-local debug = true -- Commander Mode will tell you why it chose the button it did
+local debug = false -- Commander Mode will tell you why it chose the button it did
 
 Utils = (loadfile "G3Utils.lua")() -- Required file (Place in same directory)
 Lookup = (loadfile "G3Lookups.lua")()  -- Required file (Place in same directory)
@@ -261,7 +261,7 @@ end
 function InNamingScreen()
     local state = memory.readbyte(Ptr(pmAddresses["NicknameScreen"], 0x1E11), 'System Bus')
     -- 0 STATE_FADE_IN
-    -- 1 STATE_WAIT_FADE_INx
+    -- 1 STATE_WAIT_FADE_IN
     -- 2 STATE_HANDLE_INPUT
     -- 3 STATE_MOVE_TO_OK_BUTTON
     -- 4 STATE_START_PAGE_SWAP
