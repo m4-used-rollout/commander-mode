@@ -68,6 +68,7 @@ pmAddressesEm = {
     ["CursorSubmenu"] = 0X203CD92, -- sMenu.cursorPos
     ["PartyMenu"] = 0x203cec8, -- gPartyMenu
     ["BagMenu"] = 0x203ce54, -- gBagMenu
+    ["Evolution"] = 0x203ab80, -- sEvoStructPtr
 
     -- Dynamic variables (need to figure out)
     ["CursorContest"] = 0x2002E30,
@@ -120,6 +121,7 @@ pmAddressesFr = {
     ["CursorSubmenu"] = 0x20399c2, -- sMenu.cursorPos,
     ["PartyMenu"] = 0x203b0a0, -- gPartyMenu
     ["BagMenuDisplay"] = 0x203ad10, -- sBagMenuDisplay
+    ["Evolution"] = 0x2039a20, -- sEvoStructPtr
 
     ["Bag"] = {
         ['items'] = { id = 0, offset = 0x310, length = 42 },
@@ -171,16 +173,22 @@ function MoveDown() return { ["Down"] = true } end
 function MoveLeft() return { ["Left"] = true } end
 function MoveRight() return { ["Right"] = true } end
 function Confirm() return { ["A"] = true } end
-function Escape() return { ["B"] = true } end
+function Escape() 
+    if EvolutionIsHappening() then
+        log('But Evolution is happening, so I will do nothing')
+        return NoInput()
+    end
+    return { ["B"] = true }
+end
 function NoInput() return {} end
 
 -- Commander Logic
 
 function Active()
-    if EvolutionIsHappening() then
-        log("Inactive: Evolution in progress")
-        return false
-    end
+    -- if EvolutionIsHappening() then
+    --     log("Inactive: Evolution in progress")
+    --     return false
+    -- end
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
     if InBattle() then
         if NicknamingPokemon() then
@@ -310,7 +318,7 @@ function TryingToSwitchMoves() return (memory.read_u32_le(pmAddresses["FirstMonB
 function InTargetingScreen() return InDoubleBattle() and (memory.read_u32_le(pmAddresses["FirstMonBattleController"]) == pmAddresses["TargetingControllerFunction"] + 1 or memory.read_u32_le(pmAddresses["SecondMonBattleController"]) == pmAddresses["TargetingControllerFunction"] + 1) end
 function AtSwitchChangePokemonPrompt() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'System Bus'), "Will .+ change\nPokémon?") end
 function TriedToSwitchToActivePokemon() return string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'System Bus'), ".+ is already\nin battle!") end
-function EvolutionIsHappening() return memory.read_u16_le(pmAddresses["CurrentMusic"], 'System Bus')  == 0x179 end
+function EvolutionIsHappening() return memory.read_u32_le(pmAddresses["Evolution"], 'System Bus')  > 0 end -- Check to see if sEvoStructPtr is pointing to something
 
 function AboutToLearnMove()
     return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'System Bus'), "Delete a move to make\nroom for .+?")
