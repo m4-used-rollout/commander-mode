@@ -1,6 +1,6 @@
 -- TPP Commander Mode (Military Mode ][) script
 -- For FireRed, Emerald and their binary hacks
--- Commands: 
+-- Commands:
 --  MOVE    - Selects moves 1-4
 --  SWITCH  - Selects pokemon 1-6
 --  ITEM    - Selects item by id (if present in bag and applicable to battle)
@@ -86,9 +86,9 @@ pmAddressesEm = {
 -- FireRed
 pmAddressesFr = {
     ["Windows"] = 0x20204b4, -- gWindows
-    ["DialogText"] = 0x2021D18, -- gStringVar4 
-    ["BattleText"] = 0x202298C, -- gDisplayedStringBattle 
-    ["BattleFlags"] = 0x2022B4C, -- gBattleTypeFlags 
+    ["DialogText"] = 0x2021D18, -- gStringVar4
+    ["BattleText"] = 0x202298C, -- gDisplayedStringBattle
+    ["BattleFlags"] = 0x2022B4C, -- gBattleTypeFlags
     ["MenuId"] = 0x2022BC4, -- gBattleBufferA[0][0] (see sPlayerBufferCommands for values)
     ["DoubleBattleMenuId"] = 0x2022FC4, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
     ["YesNoWindowId"] = 0x203adf3, -- sYesNoWindowId
@@ -127,7 +127,7 @@ pmAddressesFr = {
         ['items'] = { id = 0, offset = 0x310, length = 42 },
         -- ['key'] = { id = 1 } --no use in battle
         ['balls'] = { id = 2, offset = 0x430, length = 13 },
-        
+
     }
 }
 -- FireRed Rev 1
@@ -138,6 +138,56 @@ pmAddressesFrRev1 = {
     ["TargetingControllerFunction"] = 0x802e688, -- HandleInputChooseTarget (Rev 1)
     ["MoveSwitchingControllerFunction"] = 0x802ef6c -- HandleMoveSwitching (Rev 1)
 
+}
+
+-- Ruby
+pmAddressesRb = {
+    ["Tasks"] = 0x03004b20, -- gTasks
+    -- ["TargetingCursor"] = 0x3005d74, -- gMultiUsePlayerCursor
+    -- ["TargetingControllerFunction"] = 0x8057824, -- HandleInputChooseTarget
+    -- ["MoveSwitchingControllerFunction"] = 0x8058138, -- HandleMoveSwitching
+    -- ["FirstMonBattleController"] = 0x3005d60, -- gBattlerControllerFuncs[0]
+    -- ["SecondMonBattleController"] = 0x3005d60 + 8, -- gBattlerControllerFuncs[2]
+    -- ["NicknameScreen"] = 0x2039f94, -- sNamingScreen
+    -- ["PokemonSummaryScreen"] = 0x203cf1c, -- sMonSummaryScreen
+    -- ["PokemonSummaryScreenCallbackOffset"] = 4, -- (sMonSummaryScreen)->callback
+    ["SummaryReturnToBattle"] = 0x0807ad59, -- ReshowBattleScreenAfterMenu
+    -- ["SummaryReturnToParty"] = 0x81b3894, -- CB2_ReturnToPartyMenuFromSummaryScreen
+    -- ["SummaryReturnToTMLearn"] = 0x81b70f0, -- CB2_ReturnToPartyMenuWhileLearningMove
+    -- ["CursorMoveLearn"] = 0x40c6, -- (sMonSummaryScreen)->firstMoveIndex
+    ["DialogText"] = 0x020234cc, -- gStringVar4
+    ["BattleText"] = 0x020238cc, -- gDisplayedStringBattle
+    ["BattleFlags"] = 0x020239f8, -- gBattleTypeFlags
+    ["MenuId"] = 0x02023a60, -- gBattleBufferA[0][0] (see sPlayerBufferCommands for values)
+    ["DoubleBattleMenuId"] = 0x02023a60 + 0x400, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
+    -- ["BattleMoveLearnState"] = 0x2023e82 + 0x1f, -- gBattleScripting.learnMoveState
+    ["BattleCommunicationState"] = 0x02024d1e, -- gBattleCommunication[MULTIUSE_STATE]
+    ["CursorYesNo"] = 0x02024d1e + 1, -- gBattleCommunication[CURSOR_POSITION]
+    ["CursorBattle"] = 0x02024e60, -- gActionSelectionCursor[0]
+    ["CursorDoubleBattle"] = 0x02024e60 + 2, -- gActionSelectionCursor[2]
+    ["CursorFight"] = 0x02024e64, -- gMoveSelectionCursor[0]
+    ["CursorDoubleFight"] = 0x02024e64 + 2, -- gMoveSelectionCursor[2]
+    ["BagId"] = 0x02038559, -- sCurrentBagPocket
+    ["BagPositions"] = 0x3005d10, -- gBagPocketScrollStates
+    ["SaveBlock1"] = 0x02025734, -- gSaveBlock1
+    ["SaveBlock2"] = 0x02024ea4, -- gSaveBlock2
+    ["CurrentMusic"] = 0x030006d4, -- sCurrentMapMusic
+    ["InBattle"] = 0x03001770 + 0x439, -- gMain.inBattle
+    ["CursorSubmenu"] = 0x020388b8 + , -- sMenu.cursorPos
+    -- ["PartyMenu"] = 0x203cec8, -- gPartyMenu
+    -- ["BagMenu"] = 0x203ce54, -- gBagMenu
+    ["Evolution"] = 0x02000000 + 0x14800, -- gSharedMem + sEvoInfo
+
+    -- Dynamic variables (need to figure out)
+    ["CursorContest"] = 0x2002E30,
+
+    ["Bag"] = {
+        ['items'] = { id = 0, offset = 0x560, length = 30 },
+        ['balls'] = { id = 1, offset = 0x650, length = 16 },
+        -- ['tms'] = { id = 2 } --no use in battle
+        ['berries'] = { id = 3, offset = 0x790, length = 46},
+        -- ['key'] = { id = 4 } --no use in battle
+    }
 }
 
 -- Initialization
@@ -154,6 +204,9 @@ function Init()
     elseif GAME_CODE == "BPRE" then -- FireRed
         pmAddresses = Extend(pmAddressesFr, GAME_VERSION == 1 and pmAddressesFrRev1 or {})
         print("Commander ready for Pokemon FireRed rev " .. GAME_VERSION)
+    elseif GAME_CODE == "AXVE" then -- Ruby
+        pmAddresses = pmAddressesRb
+        print("Commander ready for Pokemon Ruby rev " .. GAME_VERSION)
     else
         print("Commander Mode does not support this game")
     end
@@ -173,7 +226,7 @@ function MoveDown() return { ["Down"] = true } end
 function MoveLeft() return { ["Left"] = true } end
 function MoveRight() return { ["Right"] = true } end
 function Confirm() return { ["A"] = true } end
-function Escape() 
+function Escape()
     if EvolutionIsHappening() then
         log('But Evolution is happening, so I will do nothing')
         return NoInput()
@@ -193,19 +246,19 @@ function Active()
     if InBattle() then
         if NicknamingPokemon() then
             log("Inactive: Nicknaming in progress")
-            return false    
+            return false
         end
         log("Active: In battle")
         return true
-        
+
     end
     if InPartyMenu() then
         log("Active: In the party menu")
-        return true    
+        return true
     end
     if AboutToLearnMove() then
         log("Active: About to teach a move")
-        return true    
+        return true
     end
     if AboutToCancelMove() then
         log("Active: About to cancel a movelearn")
@@ -239,7 +292,7 @@ end
 
 function InDoubleBattle()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 1) == 1 
+    return bit.band(battleFlags, 1) == 1
 end
 
 function InSafariBattle()
@@ -289,7 +342,7 @@ function InFightMenu() return BattleStateIs(0x14) end
 function InBagMenu() return BattleStateIs(0x15) end
 function InBattlePartyMenu() return BattleStateIs(0x16) end
 function InPartyMenu() return Ptr(pmAddresses["PartyMenu"] - 4) ~= 0 and Ptr(Ptr(pmAddresses["PartyMenu"] - 4)) ~= 0 end -- sPartyMenuInternal and sPartyMenuInternal->task
-function InBagSubmenu() 
+function InBagSubmenu()
     if not InBagMenu() then
         return false
     elseif pmAddresses["BagMenu"] then
@@ -307,10 +360,12 @@ function InYesNoMenu()
             return memory.readbyte(pmAddresses["BattleCommunicationState"], 'System Bus') == 1
         end
         return memory.readbyte(pmAddresses["BattleMoveLearnState"], 'System Bus') == 1
+    elseif pmAddresses["Windows"] then
+        return DoesWindowExist(memory.readbyte(pmAddresses["YesNoWindowId"], 'System Bus'))
     end
-    return DoesWindowExist(memory.readbyte(pmAddresses["YesNoWindowId"], 'System Bus'))
+    return false
 end
-function InPokemonSummary() 
+function InPokemonSummary()
     local mainCallback = Ptr(Ptr(pmAddresses["PokemonSummaryScreen"], pmAddresses['PokemonSummaryScreenCallbackOffset'])) - 1
     return mainCallback == pmAddresses['SummaryReturnToParty'] or mainCallback == pmAddresses['SummaryReturnToBattle'] or mainCallback == pmAddresses['SummaryReturnToTMLearn']
 end
@@ -332,19 +387,19 @@ function NicknamingPokemon() return Utils.grabTextFromMemory(pmAddresses["Battle
 function ContestAppealSelect() return pmAddresses["CursorContest"] and string.find(Utils.grabTextFromMemory(pmAddresses["DialogText"], 255, 'System Bus'), "Which move will be played?") end
 function ForcedMonSwitch() return string.find(Utils.grabTextFromMemory(pmAddresses["BattleText"], 255, 'System Bus'):lower(), ("Use next POKéMON?"):lower()) end
 
-function GetBattleCursor() 
+function GetBattleCursor()
     if InDoubleBattleMenu() then
         return memory.readbyte(pmAddresses["CursorDoubleBattle"], 'System Bus')
     end
     return memory.readbyte(pmAddresses["CursorBattle"], 'System Bus')
 end
-function GetFightCursor() 
+function GetFightCursor()
     if InDoubleBattleMenu() then
         return memory.readbyte(pmAddresses["CursorDoubleFight"], 'System Bus')
     end
     return memory.readbyte(pmAddresses["CursorFight"], 'System Bus')
 end
-function GetMoveLearnCursor() 
+function GetMoveLearnCursor()
     if pmAddresses["CursorMoveLearn"] > 0x01000000 then
         return memory.readbyte(pmAddresses["CursorMoveLearn"], 'System Bus') -- FRLG Summary Move Cursor is static
     else
@@ -352,9 +407,9 @@ function GetMoveLearnCursor()
         return memory.readbyte(Ptr(pmAddresses["PokemonSummaryScreen"], pmAddresses["CursorMoveLearn"]), 'System Bus')
     end
 end
-function GetYesNoCursor() 
+function GetYesNoCursor()
     if InBattle() then -- use gBattleCommunication
-        return memory.readbyte(pmAddresses["CursorYesNo"], 'System Bus')    
+        return memory.readbyte(pmAddresses["CursorYesNo"], 'System Bus')
     end
     -- use sMenu.cursorPos (Submenu Cursor)
     return GetSubmenuCursor()
@@ -363,11 +418,22 @@ function GetSubmenuCursor() return memory.readbyte(pmAddresses["CursorSubmenu"],
 function GetContestCursor() return memory.readbyte(pmAddresses["CursorContest"], 'System Bus') end
 function GetTargetingCursor() return memory.readbyte(pmAddresses["TargetingCursor"], 'System Bus') end
 function GetBagPocket() return memory.readbyte(pmAddresses["BagId"], 'System Bus') end
-function GetBagCursor() 
-    local bagOffset = memory.readbyte(pmAddresses["BagId"], 'System Bus') * 2
+function GetBagCursor()
+    if pmAddresses["BagPositions"] then -- Ruby/Sapphire
+        -- struct PocketScrollState
+        -- {
+        --     u8 cursorPos;
+        --     u8 scrollTop;
+        --     u8 numSlots;
+        --     u8 cursorMax;
+        -- };
+        local bagPositionsOffset = (GetBagPocket() * 4) + pmAddresses["BagPositions"]
+        return memory.readbyte(bagPositionsOffset, 'System Bus') + memory.readbyte(bagPositionsOffset + 1, 'System Bus')
+    end
+    local bagOffset = GetBagPocket() * 2
     return memory.readbyte(pmAddresses["CursorBagStart"] + bagOffset, 'System Bus') + memory.readbyte(pmAddresses["ScrollBagStart"] + bagOffset, 'System Bus')
 end
-function GetPartyCursor() 
+function GetPartyCursor()
     local cursor = memory.readbyte(pmAddresses["PartyMenu"] + 9, 'System Bus') -- PartyMenu.slotId
     if cursor == 7 then
         return 6 -- range is 0-5 but cancel is 7
@@ -491,7 +557,7 @@ end
 
 function UpdateItems()
     log("Updating item cache...")
-    local sBlock1Addr = Ptr(pmAddresses["SaveBlock1Pointer"])
+    local sBlock1Addr = pmAddresses["SaveBlock1"] or Ptr(pmAddresses["SaveBlock1Pointer"])
     local securityKey = 0
     if pmAddresses['SecurityKeyOffset'] then
         securityKey = memory.read_u32_le(Ptr(pmAddresses["SaveBlock2Pointer"], pmAddresses['SecurityKeyOffset']))
@@ -517,7 +583,7 @@ function MoveToBag(pocket, item)
         end
         log("Avoiding running from wild battle by saying no to switching")
         return MoveUp()
-    elseif pocket == pmAddresses['Bag']['balls'].id and InTrainerBattle() or CanUseItems() ~= true then 
+    elseif pocket == pmAddresses['Bag']['balls'].id and InTrainerBattle() or CanUseItems() ~= true then
         log("Refusing to help throw balls at trainers")
         return NoInput() --don't be a thief
     elseif InBagMenu() then
@@ -775,7 +841,7 @@ function Parse(cmd)
     return out
 end
 
-function Extend(tbl1, tbl2) 
+function Extend(tbl1, tbl2)
     for k,v in pairs(tbl2) do
         tbl1[k] = v
     end
