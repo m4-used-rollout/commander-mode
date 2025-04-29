@@ -49,23 +49,24 @@ pmAddressesEm = {
     ["BattleText"] = 0x2022E2C, -- gDisplayedStringBattle
     ["BattleFlags"] = 0x2022FEC, -- gBattleTypeFlags
     ["MenuId"] = 0x2023064, -- gBattleBufferA[0][0] (see sPlayerBufferCommands for values)
-    ["DoubleBattleMenuId"] = 0x2023464, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
+    ["DoubleBattleMenuId"] = 0x2023064 + 0x400, -- gBattleBufferA[2][0] (see sPlayerBufferCommands for values)
     ["YesNoWindowId"] = 0x203cd9f, -- sYesNoWindowId
-    ["BattleMoveLearnState"] = 0x2023e82 + 0x1f, -- gBattleScripting.learnMoveState
+    --["BattleMoveLearnState"] = 0x2023e82 + 0x1f, -- gBattleScripting.learnMoveState -- ???
+    ["BattleMoveLearnState"] = 0x2024474 + 0x1f, -- gBattleScripting.learnMoveState
     ["BattleCommunicationState"] = 0x2024332, -- gBattleCommunication[MULTIUSE_STATE]
     ["CursorYesNo"] = 0x2024332 + 1, -- gBattleCommunication[CURSOR_POSITION]
     ["CursorBattle"] = 0x20244AC, -- gActionSelectionCursor[0]
-    ["CursorDoubleBattle"] = 0x20244AE, -- gActionSelectionCursor[2]
+    ["CursorDoubleBattle"] = 0x20244AC + 2, -- gActionSelectionCursor[2]
     ["CursorFight"] = 0x20244B0, -- gMoveSelectionCursor[0]
-    ["CursorDoubleFight"] = 0x20244B2, -- gMoveSelectionCursor[2]
-    ["BagId"] = 0x203CE5D, -- gBagPositionStruct.pocket
-    ["CursorBagStart"] = 0x203CE60, -- gBagPositionStruct.cursorPosition[]
-    ["ScrollBagStart"] = 0x203CE6A, -- gBagPositionStruct.scrollPosition[]
+    ["CursorDoubleFight"] = 0x20244B0 + 2, -- gMoveSelectionCursor[2]
+    ["BagId"] = 0x203CE58 + 5, -- gBagPositionStruct.pocket
+    ["CursorBagStart"] = 0x203CE58 + 8, -- gBagPositionStruct.cursorPosition[]
+    ["ScrollBagStart"] = 0x203CE58 + 0x12, -- gBagPositionStruct.scrollPosition[]
     ["SaveBlock1Pointer"] = 0x3005D8C, -- gSaveBlock1Ptr
     ["SaveBlock2Pointer"] = 0x3005D90, -- gSaveBlock2Ptr
     ["CurrentMusic"] = 0x03000F48, -- sCurrentMapMusic
     ["InBattle"] = 0x30022C0 + 0x439, --0x030026F9 -- gMain.inBattle
-    ["CursorSubmenu"] = 0X203CD92, -- sMenu.cursorPos
+    ["CursorSubmenu"] = 0x203CD90 + 2, -- sMenu.cursorPos
     ["PartyMenu"] = 0x203cec8, -- gPartyMenu
     ["BagMenu"] = 0x203ce54, -- gBagMenu
     ["Evolution"] = 0x203ab80, -- sEvoStructPtr
@@ -80,7 +81,29 @@ pmAddressesEm = {
         -- ['tms'] = { id = 2 } --no use in battle
         ['berries'] = { id = 3, offset = 0x790, length = 46},
         -- ['key'] = { id = 4 } --no use in battle
-    }
+
+        -- Archipelago Emerald
+        -- ['items'] = { id = 0, offset = 0x560, length = 150 },
+        -- ['balls'] = { id = 1, offset = 0x830, length = 16 },
+        -- ['berries'] = { id = 3, offset = 0x970, length = 46},
+    },
+
+    --Archipelago Emerald
+    -- ["TargetingControllerFunction"] = 0x8057FC8, -- HandleInputChooseTarget
+    -- ["MoveSwitchingControllerFunction"] = 0x80588DC, -- HandleMoveSwitching
+    -- ["SummaryReturnToBattle"] = 0x80AA214, -- ReshowBattleScreenAfterMenu
+    -- ["SummaryReturnToParty"] = 0x81B52B8, -- CB2_ReturnToPartyMenuFromSummaryScreen
+    -- ["SummaryReturnToTMLearn"] = 0x81B8CDC, -- CB2_ReturnToPartyMenuWhileLearningMove
+    -- ["NicknameScreen"] = 0x203A218, -- sNamingScreen
+    -- ["PokemonSummaryScreen"] = 0x203D1A0, -- sMonSummaryScreen
+    -- ["YesNoWindowId"] = 0x203D023, -- sYesNoWindowId
+    -- ["BagId"] = 0x203D0DC + 5, -- gBagPositionStruct.pocket
+    -- ["CursorBagStart"] = 0x203D0DC + 8, -- gBagPositionStruct.cursorPosition[]
+    -- ["ScrollBagStart"] = 0x203D0DC + 0x12, -- gBagPositionStruct.scrollPosition[]
+    -- ["CursorSubmenu"] = 0x203D014 + 2, -- sMenu.cursorPos
+    -- ["PartyMenu"] = 0x203D14C, -- gPartyMenu
+    -- ["BagMenu"] = 0x203D0D8, -- gBagMenu
+    -- ["Evolution"] = 0x203AE04 -- sEvoStructPtr
 }
 
 -- FireRed
@@ -277,32 +300,32 @@ function Active()
 end
 
 function InBattle()
-    return bit.band(memory.readbyte(pmAddresses["InBattle"], 'System Bus'), 2) > 0;
+    return (memory.readbyte(pmAddresses["InBattle"], 'System Bus') & 2) > 0;
 end
 
 function InTrainerBattle()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 8) == 8
+    return (battleFlags & 8) == 8
 end
 
 function InLegendaryBattle()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 0x70007C00) > 0
+    return (battleFlags & 0x70007C00) > 0
 end
 
 function InDoubleBattle()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 1) == 1
+    return (battleFlags & 1) == 1
 end
 
 function InSafariBattle()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 0x80) == 0x80
+    return (battleFlags & 0x80) == 0x80
 end
 
 function CanUseItems()
     local battleFlags = memory.read_u32_le(pmAddresses["BattleFlags"], 'System Bus')
-    return bit.band(battleFlags, 0x100) == 0 --not in battle facility
+    return (battleFlags & 0x100) == 0 --not in battle facility
 end
 
 function BattleStateIs(id)
